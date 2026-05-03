@@ -19,28 +19,29 @@ async function initDB() {
         CREATE TABLE IF NOT EXISTS sweep_data (
             id INTEGER PRIMARY KEY DEFAULT 1,
             current_index INTEGER NOT NULL DEFAULT 0,
-            current_date TEXT NOT NULL DEFAULT '1 January 2024'
+            sweep_date TEXT NOT NULL DEFAULT '1 January 2024'
         )
     `);
-    // Insert default row if table is empty
     await pool.query(`
-        INSERT INTO sweep_data (id, current_index, current_date)
+        INSERT INTO sweep_data (id, current_index, sweep_date)
         VALUES (1, 0, '1 January 2024')
         ON CONFLICT (id) DO NOTHING
     `);
 }
 
-// GET current sweep data
 app.get('/api/sweep-data', async (req, res) => {
     const result = await pool.query('SELECT * FROM sweep_data WHERE id = 1');
-    res.json(result.rows[0]);
+    const row = result.rows[0];
+    res.json({
+        current_index: row.current_index,
+        current_date: row.sweep_date
+    });
 });
 
-// POST updated sweep data
 app.post('/api/sweep-data', async (req, res) => {
     const { current_index, current_date } = req.body;
     await pool.query(
-        'UPDATE sweep_data SET current_index = $1, current_date = $2 WHERE id = 1',
+        'UPDATE sweep_data SET current_index = $1, sweep_date = $2 WHERE id = 1',
         [current_index, current_date]
     );
     res.json({ success: true });
